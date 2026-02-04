@@ -7,7 +7,7 @@ on:
       s3_bucket:
         description: 'S3 Bucket Name'
         required: true
-        default: 'bronze-03'
+        default: 'curated-yt'
       s3_prefix:
         description: 'S3 Prefix/Folder Path'
         required: true
@@ -60,8 +60,8 @@ jobs:
       
       - name: Verify S3 Access
         run: |
-          echo "Verifying access to S3 bucket: ${{ github.event.inputs.s3_bucket || 'bronze-03' }}"
-          aws s3 ls s3://${{ github.event.inputs.s3_bucket || 'bronze-03' }} || echo "Bucket check complete"
+          echo "Verifying access to S3 bucket: ${{ github.event.inputs.s3_bucket || 'curated-yt' }}"
+          aws s3 ls s3://${{ github.event.inputs.s3_bucket || 'curated-yt' }} || echo "Bucket check complete"
       
       - name: Run Data Ingestion Pipeline
         env:
@@ -87,7 +87,7 @@ jobs:
         if: success()
         run: |
           echo "✅ Data ingestion completed successfully!"
-          echo "Files uploaded to: s3://${{ github.event.inputs.s3_bucket || 'bronze-03' }}/${{ github.event.inputs.s3_prefix || 'final-raw/' }}"
+          echo "Files uploaded to: s3://${{ github.event.inputs.s3_bucket || 'curated-yt' }}/${{ github.event.inputs.s3_prefix || 'final-raw/' }}"
       
       - name: Notify on Failure
         if: failure()
