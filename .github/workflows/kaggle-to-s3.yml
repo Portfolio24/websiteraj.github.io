@@ -1,0 +1,96 @@
+name: Kaggle to S3 Data Ingestion
+
+on:
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      s3_bucket:
+        description: 'S3 Bucket Name'
+        required: true
+        default: 'bronze-03'
+      s3_prefix:
+        description: 'S3 Prefix/Folder Path'
+        required: true
+        default: 'final-raw/'
+      chunk_size:
+        description: 'Chunk Size (rows per file)'
+        required: false
+        default: '100000'
+  
+  # Scheduled trigger (optional - runs weekly on Mondays at 2 AM UTC)
+  schedule:
+    - cron: '0 2 * * 1'
+  
+  # Trigger on push to main (optional)
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'scripts/**'
+
+env:
+  PYTHON_VERSION: '3.9'
+
+jobs:
+  ingest-data:
+    name: Download from Kaggle and Upload to S3
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Verify S3 Access
+        run: |
+          echo "Verifying access to S3 bucket: ${{ github.event.inputs.s3_bucket || 'bronze-03' }}"
+          aws s3 ls s3://${{ github.event.inputs.s3_bucket || 'bronze-03' }} || echo "Bucket check complete"
+      
+      - name: Run Data Ingestion Pipeline
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          S3_BUCKET: ${{ github.event.inputs.s3_bucket || 'bronze-03' }}
+          S3_PREFIX: ${{ github.event.inputs.s3_prefix || 'final-raw/' }}
+          CHUNK_ROWS: ${{ github.event.inputs.chunk_size || '100000' }}
+        run: |
+          python scripts/kaggle_to_s3_automated.py
+      
+      - name: Upload Summary
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ingestion-summary
+          path: |
+            ingestion_summary.json
+            *.log
+          retention-days: 30
+      
+      - name: Notify on Success
+        if: success()
+        run: |
+          echo "✅ Data ingestion completed successfully!"
+          echo "Files uploaded to: s3://${{ github.event.inputs.s3_bucket || 'bronze-03' }}/${{ github.event.inputs.s3_prefix || 'final-raw/' }}"
+      
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "❌ Data ingestion failed. Check logs for details."
+          exit 1
