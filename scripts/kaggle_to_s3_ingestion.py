@@ -244,9 +244,9 @@ def process_and_upload_data(config: Config, s3_client: boto3.client, summary: Su
             dtype=str,
             low_memory=False
         ):
-            # Filter data from January 19, 2026 onwards
-            chunk['trending_date'] = pd.to_datetime(chunk['trending_date'])
-            chunk = chunk[chunk['trending_date'] >= cutoff_date]
+            # Filter data from January 19, 2026 onwards based on video_published_at
+            chunk['video_published_at'] = pd.to_datetime(chunk['video_published_at'], format='ISO8601', errors='coerce')
+            chunk = chunk[chunk['video_published_at'] >= cutoff_date]
             
             # Skip empty chunks after filtering
             if len(chunk) == 0:
@@ -381,4 +381,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
