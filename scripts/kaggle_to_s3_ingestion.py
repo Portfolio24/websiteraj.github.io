@@ -236,7 +236,7 @@ def process_and_upload_data(config: Config, s3_client: boto3.client, summary: Su
     
     try:
         part_number = 1
-        cutoff_date = pd.to_datetime('2026-01-19')
+        cutoff_date = pd.Timestamp('2026-01-19').tz_localize(None)
         
         for chunk in pd.read_csv(
             config.EXTRACTED_CSV,
@@ -244,9 +244,12 @@ def process_and_upload_data(config: Config, s3_client: boto3.client, summary: Su
             dtype=str,
             low_memory=False
         ):
-            # Filter data from January 19, 2026 onwards based on video_published_at
-            chunk['video_published_at'] = pd.to_datetime(chunk['video_published_at'], format='ISO8601', errors='coerce')
-            chunk = chunk[chunk['video_published_at'] >= cutoff_date]
+            # Filter data from January 19, 2026 onwards based on video_published_date
+            chunk['video_published_date'] = pd.to_datetime(chunk['video_published_date'], utc=True, errors='coerce')
+            # Remove timezone information to make comparison work
+            chunk['video_published_date'] = chunk['video_published_date'].dt.tz_localize(None)
+            # Filter rows
+            chunk = chunk[chunk['video_published_date'] >= cutoff_date]
             
             # Skip empty chunks after filtering
             if len(chunk) == 0:
