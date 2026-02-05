@@ -11,7 +11,7 @@ on:
       s3_prefix:
         description: 'S3 Prefix/Folder Path'
         required: true
-        default: 'final-raw/'
+        default: 'final-raw1/'
       chunk_size:
         description: 'Chunk Size (rows per file)'
         required: false
