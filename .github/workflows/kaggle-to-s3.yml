@@ -17,10 +17,6 @@ on:
         required: false
         default: '100000'
   
-  # Scheduled trigger (optional - runs weekly on Mondays at 2 AM UTC)
-  schedule:
-    - cron: '0 2 * * 1'
-  
   # Trigger on push to main (optional)
   # push:
   #   branches:
@@ -67,11 +63,11 @@ jobs:
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
-          S3_BUCKET: ${{ github.event.inputs.s3_bucket || 'bronze-03' }}
-          S3_PREFIX: ${{ github.event.inputs.s3_prefix || 'final-raw/' }}
+          S3_BUCKET: ${{ github.event.inputs.s3_bucket || 'curated-yt' }}
+          S3_PREFIX: ${{ github.event.inputs.s3_prefix || 'final-raw1/' }}
           CHUNK_ROWS: ${{ github.event.inputs.chunk_size || '100000' }}
         run: |
-          python scripts/kaggle_to_s3_automated.py
+          python scripts/kaggle_to_s3_ingestion.py
       
       - name: Upload Summary
         if: always()
